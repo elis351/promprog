@@ -1,59 +1,20 @@
 #!/bin/bash
-​
-​
-IFS=$'\n'
-​
-​
-inspect_node() {
-	last_char=$(echo $1|awk '{print substr($0,length($0),1)}')
-	if [[ $last_char == "/" ]]
-		then
-		total_size=0
-		files=$(ls $1)
-		for file in $files
-			do
-				additional=$(inspect_node $1$file)
-				total_size=$((total_size + additional))
-			done
-		echo $total_size
-	else
-		echo $(ls -l $1 | awk -v x=5 '{print $x}')
-	fi
-}
-​
-​
-input=$1
-last_char=$(echo $1|awk '{print substr($0,length($0),1)}')
-if [[ $last_char != "/" ]]
+
+dir="."
+
+if [[ $# -ge 1 ]]
 then
-	input=$input/
+	dir=$1
 fi
-echo $(inspect_node $input)#!/bin/bash
-​
-​
-IFS=$'\n'
-​
-​
-inspect_node() {
-last_char=$(echo $1|awk '{print substr($0,length($0),1)}')
-if [[ $last_char == "/" ]]
-then
-	total_size=0
-	files=$(ls $1)
-	for file in $files
-	do
-		additional=$(inspect_node $1$file)
-		total_size=$((total_size + additional))
-	done
-	echo $total_size
-else
-	echo $(ls -l $1 | awk -v x=5 '{print $x}')
-fi
-}
-​
-​
-input=$1
-last_char=$(echo $1|awk '{print substr($0,length($0),1)}')
-if [[ $last_char != "/" ]]
-then
-input=$input/
+
+ls -AkhlR $dir | awk -v file_name="$dir" '{
+	if ($2 ~ /K$/) total += $2;
+	if ($2 ~ /M$/) total += $2 * 1024;
+	if ($2 ~ /G$/) total += $2 * 1024 * 1024;
+} END {
+	total += 4;
+	if (total < 1024) printf "%dK\t", total;
+	else if (total < 1024 * 1024) printf "%.1fM\t", total / 1024;
+	else printf "%.1fG\t", total / 1024 / 1024;
+	printf "%s\n", file_name;	
+}'
